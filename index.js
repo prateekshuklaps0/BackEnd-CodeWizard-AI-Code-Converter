@@ -57,7 +57,7 @@ app.post("/convert", async (req, res) => {
     ) {
       res.status(200).json({
         msg: "Convert Request Successful!",
-        response: response.data.choices[0].message.content + "\n" + "",
+        response: response.data.choices[0].message.content,
       });
     } else {
       res.status(500).json({
@@ -112,7 +112,7 @@ app.post("/debug", async (req, res) => {
     ) {
       res.status(200).json({
         msg: "Debug Request Successful!",
-        response: response.data.choices[0].message.content + "\n" + "",
+        response: response.data.choices[0].message.content,
       });
     } else {
       res.status(500).json({
@@ -181,7 +181,7 @@ app.post("/qualityCheck", async (req, res) => {
     ) {
       res.status(200).json({
         msg: "Quality Check Request Successful!",
-        response: response.data.choices[0].message.content + "\n" + "",
+        response: response.data.choices[0].message.content,
       });
     } else {
       res.status(500).json({
