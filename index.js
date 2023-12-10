@@ -57,7 +57,7 @@ app.post("/convert", async (req, res) => {
     ) {
       res.status(200).json({
         msg: "Convert Request Successful!",
-        response: response.data.choices[0].message.content,
+        response: response.data.choices[0].message.content + "\n" + "",
       });
     } else {
       res.status(500).json({
