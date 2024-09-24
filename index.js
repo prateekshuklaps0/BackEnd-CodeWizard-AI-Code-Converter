@@ -1,26 +1,87 @@
 require("dotenv").config();
 const PORT = process.env.PORT || 8080;
-const API_KEY = process.env.API_KEY || "";
-const openApiUrl = "https://api.openai.com/v1/chat/completions";
+const API_KEY = process.env.API_KEY || "Api Key not found!";
+const Open_API_Url =
+  process.env.Open_API_Url || "https://api.openai.com/v1/chat/completions";
 
-const express = require("express");
-const axios = require("axios");
 const cors = require("cors");
+const axios = require("axios");
+const express = require("express");
 
 const app = express();
-app.use(express.json());
+
 app.use(cors());
+app.use(express.json());
 
 // HomeRoute
-app.get("/", async (req, res) => {
+app.get("/", async (_, res) => {
   try {
-    res.status(200).json({ msg: "Welcome to CodeWizard!" });
+    res.status(200).json({ message: "Welcome to CodeWizard ✒️" });
   } catch (error) {
-    res.status(500).json({ msg: "Convert Request Error!" });
+    console.log("Home Route Error :-", error);
+    res.status(500).json({ message: "HomeRoute Error❗", ...error });
   }
 });
 
-// Code Convertor
+// Run Code
+app.post("/run", async (req, res) => {
+  try {
+    const { code } = req.body;
+    const Prompt = `
+                Consider you are code runtime environment, you have to compile and run the provided code by carefully and concisely following the instructions below :
+                
+                * If the provided input is not a valid code snippet, politely inform me about the input and why it cannot be compiled.
+                * Remember, all the responses you generate will be shown directly to the user, so it should be calm, soothing, and descriptive.
+                * If your descriptive response is more than one sentence, ensure each sentence is on a new line.
+                * If the code includes imports or dependencies (e.g., CSS files, external libraries, components), and these are not accessible within the current environment, inform me of this as mentioned in the above instruction.
+                * Carefully and thoroughly run, calculate, and compile the entire code line by line internally, then provide the output in your response.
+                * Compile the code exactly as it is. Do not infer, optimize, or modify the input logic or code.
+                * If the code contains syntax errors or other issues, highlight these errors in your response.
+                * Any difference between the output you generate and the output from a real code runtime environment could compromise the reliablity of my project, so make sure to study the code line by line, only after a thorough examination provide the output you generated.
+                * If the code is valid, compile it like a real runtime environment would do and return nothing else but the output of the code.
+                * If the code is incomplete or ambiguous, provide a text alerting me to this, as instructed above.
+                * If the code includes language-specific or environment-specific requirements (e.g., a specific runtime or library), make assumptions based on common defaults unless specified otherwise.
+                * Do not provide any explanations or additional commentary beyond what is requested (i.e., the result of the compilation, error messages, or validation feedback).
+                
+                Here is the input code sample:
+                '''
+                ${code}
+                '''
+                 `;
+
+    const response = await axios.post(
+      Open_API_Url,
+      {
+        messages: [{ role: "user", content: Prompt }],
+        model: "gpt-3.5-turbo",
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const responseData = response?.data?.choices[0]?.message?.content;
+
+    if (!responseData)
+      return res.status(500).json({
+        message: "Error from openAPI while running the code!",
+        error_msg: response?.data || "No valid response received.",
+      });
+
+    res.status(200).json({
+      message: "Run Code Request Successfull!",
+      response: responseData || "No valid response received!",
+    });
+  } catch (error) {
+    console.log("Run Code Request Error :-", error);
+    res.status(500).json({ message: "Run Code Error!", ...error });
+  }
+});
+
+// Convert Code
 app.post("/convert", async (req, res) => {
   try {
     const { code, language } = req.body;
@@ -36,7 +97,7 @@ app.post("/convert", async (req, res) => {
     `;
 
     const response = await axios.post(
-      openApiUrl,
+      Open_API_Url,
       {
         messages: [{ role: "user", content: Prompt }],
         model: "gpt-3.5-turbo",
@@ -49,32 +110,25 @@ app.post("/convert", async (req, res) => {
       }
     );
 
-    if (
-      response &&
-      response.data &&
-      response.data.choices &&
-      response.data.choices[0]
-    ) {
-      res.status(200).json({
-        msg: "Convert Request Successful!",
-        response: response.data.choices[0].message.content,
+    const responseData = response?.data?.choices[0]?.message?.content;
+
+    if (!responseData)
+      return res.status(500).json({
+        message: "Error from openAPI while converting the code!",
+        error_msg: response?.data || "No valid response received.",
       });
-    } else {
-      res.status(500).json({
-        msg: "Error from openAPI while converting the code!",
-        error_msg:
-          response && response.data
-            ? response.data
-            : "No valid response received",
-      });
-    }
+
+    res.status(200).json({
+      message: "Convert Request Successfull!",
+      response: responseData || "No valid response received!",
+    });
   } catch (error) {
     console.log("Convert Request Error :-", error);
-    res.status(500).json({ msg: "Convert Request Error!" });
+    res.status(500).json({ message: "Convert Request Error!", ...error });
   }
 });
 
-// Code Debugger
+// Debug Code
 app.post("/debug", async (req, res) => {
   try {
     const { code } = req.body;
@@ -91,7 +145,7 @@ app.post("/debug", async (req, res) => {
     `;
 
     const response = await axios.post(
-      openApiUrl,
+      Open_API_Url,
       {
         messages: [{ role: "user", content: Prompt }],
         model: "gpt-3.5-turbo",
@@ -104,32 +158,25 @@ app.post("/debug", async (req, res) => {
       }
     );
 
-    if (
-      response &&
-      response.data &&
-      response.data.choices &&
-      response.data.choices[0]
-    ) {
-      res.status(200).json({
-        msg: "Debug Request Successful!",
-        response: response.data.choices[0].message.content,
+    const responseData = response?.data?.choices[0]?.message?.content;
+
+    if (!responseData)
+      return res.status(500).json({
+        message: "Error from openAPI while debugging the code!",
+        error_msg: response?.data || "No valid response received.",
       });
-    } else {
-      res.status(500).json({
-        msg: "Error from openAPI while debugging the code!",
-        error_msg:
-          response && response.data
-            ? response.data
-            : "No valid response received",
-      });
-    }
+
+    res.status(200).json({
+      message: "Debug Request Successfull!",
+      response: responseData || "No valid response received!",
+    });
   } catch (error) {
     console.log("Debug Request Error :-", error);
-    res.status(500).json({ msg: "Debug Request Error!" });
+    res.status(500).json({ message: "Debug Request Error!" });
   }
 });
 
-// Code Quality Checker
+// Check Code Quality
 app.post("/qualityCheck", async (req, res) => {
   try {
     const { code } = req.body;
@@ -160,7 +207,7 @@ app.post("/qualityCheck", async (req, res) => {
     `;
 
     const response = await axios.post(
-      openApiUrl,
+      Open_API_Url,
       {
         messages: [{ role: "user", content: Prompt }],
         model: "gpt-3.5-turbo",
@@ -173,34 +220,27 @@ app.post("/qualityCheck", async (req, res) => {
       }
     );
 
-    if (
-      response &&
-      response.data &&
-      response.data.choices &&
-      response.data.choices[0]
-    ) {
-      res.status(200).json({
-        msg: "Quality Check Request Successful!",
-        response: response.data.choices[0].message.content,
+    const responseData = response?.data?.choices[0]?.message?.content;
+
+    if (!responseData)
+      return res.status(500).json({
+        message: "Error from openAPI while checking quality of the code!",
+        error_msg: response?.data || "No valid response received.",
       });
-    } else {
-      res.status(500).json({
-        msg: "Error from openAPI while checking quality of the code!",
-        error_msg:
-          response && response.data
-            ? response.data
-            : "No valid response received",
-      });
-    }
+
+    res.status(200).json({
+      message: "Quality Check Request Successfull!",
+      response: responseData || "No valid response received!",
+    });
   } catch (error) {
     console.log("Quality Check Request Error :-", error);
-    res.status(500).json({ msg: "Quality Check Request Error!" });
+    res.status(500).json({ message: "Quality Check Request Error!" });
   }
 });
 
 app.listen(PORT, async () => {
   try {
-    console.log(`Server is running on the port: ${PORT}`);
+    console.log(`Server is running on the port : ${PORT}`);
   } catch (error) {
     console.log("Error while setting up the server :-", error);
   }
